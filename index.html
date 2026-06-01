@@ -826,12 +826,9 @@ function scrollTop() {
 // ── Open tool ──────────────────────────────────────────
 function openTool(name) {
   if (name === 'calculator') {
-    showToast('🧮 Buka calculator.html di tab baru!');
-    // uncomment baris di bawah kalau mau auto open:
-    // window.open('calculator.html', '_blank');
+    window.location.href = 'Tools/calculator.html';
   }
-}
-
+      }
 // ── Stagger cards ──────────────────────────────────────
 document.querySelectorAll('.tool-card, .stat-card').forEach((el, i) => {
   el.style.animationDelay = (3.2 + i * 0.05) + 's';
