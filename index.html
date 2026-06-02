@@ -782,11 +782,11 @@ body::before {
     <!-- Connect / Social -->
     <div class="section-label">connect</div>
     <div class="connect-grid">
-      <a class="connect-item" href="https://tiktok.com/@kaiovercooked" target="_blank">
+      <a class="connect-item" href="https://tiktok.com/@ikymods" target="_blank">
         <div class="connect-icon">♪</div>
         <div class="connect-info">
           <span class="connect-name">TikTok</span>
-          <span class="connect-handle">@kaiovercooked</span>
+          <span class="connect-handle">@ikymods</span>
         </div>
       </a>
       <a class="connect-item" href="https://github.com/kaiovercooked" target="_blank">
@@ -800,7 +800,7 @@ body::before {
         <div class="connect-icon">◎</div>
         <div class="connect-info">
           <span class="connect-name">Instagram</span>
-          <span class="connect-handle">@kaiovercooked</span>
+          <span class="connect-handle">@</span>
         </div>
       </a>
       <a class="connect-item" href="https://discord.gg/kaiovercooked" target="_blank">
@@ -816,7 +816,7 @@ body::before {
     <div class="section-label">tools</div>
     <div class="tool-grid">
 
-      <div class="tool-card" onclick="openTool('calculator')">
+      <div class="tool-card" onclick="openTool('calculator.html')">
         <div class="card-status ready"></div>
         <div class="card-icon">🧮</div>
         <div class="card-name">Calculator</div>
@@ -844,7 +844,7 @@ body::before {
         <div class="card-desc">HACK · DECRYPT · MATRIX</div>
       </div>
 
-      <div class="tool-card" onclick="showToast('🎵 Music — coming soon!')">
+      <div class="tool-card" onclick="openTool('Music')">
         <div class="card-status wip"></div>
         <div class="card-icon">🎵</div>
         <div class="card-name">Music</div>
@@ -992,7 +992,7 @@ function scrollTop() {
 // ── Open tool ──────────────────────────────────────────
 function openTool(name) {
   if (name === 'calculator') {
-    window.open('calculator.html', '_balnk');
+    window.open('calculator.html', '_blank');
     // uncomment baris di bawah kalau mau auto open:
     // window.open('calculator.html', '_blank');
   }
