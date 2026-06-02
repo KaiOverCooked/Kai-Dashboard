@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="cream">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Calculator — KaiOverCooked</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Themes ──────────────────────────────────────── */
+:root, [data-theme="cream"] {
+  --body-bg:    #E4E3DE;
+  --shell:      #DDDCD7;
+  --shell2:     #D4D3CE;
+  --display:    #1C1C1A;
+  --disp-text:  #F0EFE9;
+  --disp-sub:   #8A8980;
+  --btn-num:    #F5F4F0;
+  --btn-op:     #C8C7C1;
+  --btn-eq:     #2A2A27;
+  --btn-fn:     #BEBDB8;
+  --btn-sci:    #CCCBC6;
+  --shadow-l:   rgba(255,255,255,0.75);
+  --shadow-d:   rgba(0,0,0,0.13);
+  --accent:     #2A2A27;
+  --text-on-eq: #F0EFE9;
+  --hist-bg:    #F0EFE9;
+  --hist-text:  #2A2A27;
+  --hist-sub:   #8A8980;
+  --hist-border:rgba(0,0,0,0.07);
+  --ctrl-color: rgba(0,0,0,0.3);
+  --ctrl-hover: #2A2A27;
+}
+
+[data-theme="dark"] {
+  --body-bg:    #0E0E0E;
+  --shell:      #1A1A1A;
+  --shell2:     #222222;
+  --display:    #000000;
+  --disp-text:  #F0F0EE;
+  --disp-sub:   #555552;
+  --btn-num:    #2A2A2A;
+  --btn-op:     #333333;
+  --btn-eq:     #F0F0EE;
+  --btn-fn:     #242424;
+  --btn-sci:    #222222;
+  --shadow-l:   rgba(255,255,255,0.04);
+  --shadow-d:   rgba(0,0,0,0.5);
+  --accent:     #F0F0EE;
+  --text-on-eq: #0E0E0E;
+  --hist-bg:    #111111;
+  --hist-text:  #F0F0EE;
+  --hist-sub:   #555552;
+  --hist-border:rgba(255,255,255,0.06);
+  --ctrl-color: rgba(255,255,255,0.3);
+  --ctrl-hover: #F0F0EE;
+}
+
+[data-theme="midnight"] {
+  --body-bg:    #060818;
+  --shell:      #0D1025;
+  --shell2:     #141630;
+  --display:    #020410;
+  --disp-text:  #A8B4FF;
+  --disp-sub:   #3D4580;
+  --btn-num:    #141630;
+  --btn-op:     #1E2240;
+  --btn-eq:     #4F5FFF;
+  --btn-fn:     #0F1228;
+  --btn-sci:    #111328;
+  --shadow-l:   rgba(80,100,255,0.08);
+  --shadow-d:   rgba(0,0,0,0.6);
+  --accent:     #4F5FFF;
+  --text-on-eq: #fff;
+  --hist-bg:    #0A0C1E;
+  --hist-text:  #A8B4FF;
+  --hist-sub:   #3D4580;
+  --hist-border:rgba(79,95,255,0.12);
+  --ctrl-color: rgba(168,180,255,0.3);
+  --ctrl-hover: #A8B4FF;
+}
+
+[data-theme="forest"] {
+  --body-bg:    #1A2018;
+  --shell:      #232B20;
+  --shell2:     #2C3628;
+  --display:    #0F1510;
+  --disp-text:  #B8D4A8;
+  --disp-sub:   #4A6040;
+  --btn-num:    #2C3628;
+  --btn-op:     #354030;
+  --btn-eq:     #5A8A44;
+  --btn-fn:     #252D22;
+  --btn-sci:    #222920;
+  --shadow-l:   rgba(100,160,80,0.08);
+  --shadow-d:   rgba(0,0,0,0.5);
+  --accent:     #5A8A44;
+  --text-on-eq: #fff;
+  --hist-bg:    #1A2018;
+  --hist-text:  #B8D4A8;
+  --hist-sub:   #4A6040;
+  --hist-border:rgba(90,138,68,0.12);
+  --ctrl-color: rgba(184,212,168,0.3);
+  --ctrl-hover: #B8D4A8;
+}
+
+/* ── Base ────────────────────────────────────────── */
+html, body {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--body-bg);
+  font-family: 'DM Sans', sans-serif;
+  padding: 20px 0;
+  transition: background 0.3s ease;
+}
+
+/* ── Device shell ────────────────────────────────── */
+.device {
+  width: 340px;
+  background: var(--shell);
+  border-radius: 36px;
+  padding: 18px 18px 20px;
+  box-shadow:
+    8px 8px 24px var(--shadow-d),
+    -4px -4px 12px var(--shadow-l),
+    inset 0 1px 0 var(--shadow-l);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+/* ── Top bar ─────────────────────────────────────── */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 0 2px;
+  position: relative;
+}
+
+.notch {
+  width: 36px; height: 4px;
+  background: var(--shadow-d);
+  border-radius: 2px;
+  position: absolute;
+  left: 50%; transform: translateX(-50%);
+}
+
+.controls { display: flex; gap: 6px; margin-left: auto; }
+
+.ctrl-btn {
+  background: none; border: none; cursor: pointer;
+  width: 28px; height: 28px !important;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  color: var(--ctrl-color);
+  transition: background 0.15s, color 0.15s;
+  box-shadow: none !important;
+  position: relative;
+}
+
+.ctrl-btn:hover { background: rgba(128,128,128,0.12); color: var(--ctrl-hover); }
+.ctrl-btn.active { color: var(--ctrl-hover); }
+
+/* Theme picker dropdown */
+.theme-picker {
+  position: absolute;
+  top: 34px; right: 0;
+  background: var(--shell2);
+  border-radius: 12px;
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 50;
+  box-shadow: 0 8px 24px var(--shadow-d);
+  min-width: 130px;
+}
+
+.theme-picker.open { display: flex; }
+
+.theme-opt {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--hist-text);
+  transition: background 0.1s;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.theme-opt:hover { background: rgba(128,128,128,0.12); }
+.theme-opt.active { background: rgba(128,128,128,0.18); }
+.theme-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Display ─────────────────────────────────────── */
+.display {
+  background: var(--display);
+  border-radius: 18px;
+  padding: 14px 18px 12px;
+  margin-bottom: 10px;
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.4), 0 1px 0 var(--shadow-l);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.display::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 3px);
+  pointer-events: none; border-radius: 18px;
+}
+
+/* Copy hint */
+.display::before {
+  content: 'tap to copy';
+  position: absolute;
+  top: 10px; left: 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.12);
+  letter-spacing: 0.08em;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.display:hover::before { opacity: 1; }
+
+.copy-flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.06);
+  border-radius: 18px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.copy-flash.show { opacity: 1; }
+
+.display-expr {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; font-weight: 300;
+  color: var(--disp-sub);
+  letter-spacing: 0.03em;
+  min-height: 15px;
+  max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  transition: color 0.3s;
+}
+
+.display-result {
+  font-family: 'DM Mono', monospace;
+  font-size: 40px; font-weight: 300;
+  color: var(--disp-text);
+  letter-spacing: -0.02em; line-height: 1.1;
+  word-break: break-all; max-width: 100%;
+  transition: font-size 0.1s ease, color 0.3s;
+}
+
+.display-result.small  { font-size: 26px; }
+.display-result.xsmall { font-size: 18px; }
+
+/* ── Copy toast (inside display) ─────────────────── */
+.copy-toast {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--disp-text);
+  letter-spacing: 0.06em;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.copy-toast.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* ── History panel ───────────────────────────────── */
+.history-panel {
+  background: var(--hist-bg);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.history-panel.open { max-height: 170px; padding: 10px 12px; }
+
+.history-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.history-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; letter-spacing: 0.12em;
+  color: var(--hist-sub); text-transform: uppercase;
+}
+
+.history-clear {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--hist-sub);
+  cursor: pointer; background: none; border: none;
+  letter-spacing: 0.06em;
+  transition: color 0.15s;
+  box-shadow: none !important; height: auto !important;
+  padding: 0; border-radius: 0;
+}
+
+.history-clear:hover { color: var(--hist-text); }
+
+.history-list {
+  overflow-y: auto; max-height: 120px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+
+.history-item {
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  color: var(--hist-text);
+  padding: 5px 8px; border-radius: 7px;
+  display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer; transition: background 0.1s;
+  border-bottom: 1px solid var(--hist-border);
+}
+
+.history-item:hover { background: rgba(128,128,128,0.08); }
+.history-item:last-child { border-bottom: none; }
+.history-expr { color: var(--hist-sub); font-size: 10px; }
+.history-val  { font-weight: 500; }
+
+.history-empty {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--hist-sub); text-align: center; padding: 10px 0;
+}
+
+/* ── Mode toggle ─────────────────────────────────── */
+.mode-toggle {
+  display: flex; gap: 5px; margin-bottom: 9px;
+}
+
+.mode-btn {
+  flex: 1; height: 28px !important;
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.06em; border: none; border-radius: 9px;
+  cursor: pointer;
+  background: rgba(128,128,128,0.1);
+  color: var(--hist-sub);
+  transition: all 0.15s; box-shadow: none !important;
+}
+
+.mode-btn.active { background: var(--accent); color: var(--text-on-eq); }
+
+/* ── Button grids ────────────────────────────────── */
+.grid-sci {
+  display: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px; margin-bottom: 7px;
+}
+
+.grid-sci.show { display: grid; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+}
+
+/* ── Buttons base ────────────────────────────────── */
+button {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px; font-weight: 400;
+  border: none; border-radius: 13px;
+  height: 58px; cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.2s, color 0.2s;
+  position: relative; outline: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none; letter-spacing: 0.01em;
+  overflow: hidden;
+}
+
+.btn-num {
+  background: var(--btn-num); color: var(--accent);
+  box-shadow: 3px 3px 8px var(--shadow-d), -2px -2px 6px var(--shadow-l);
+}
+
+.btn-num:active {
+  transform: scale(0.94);
+  box-shadow: 1px 1px 3px var(--shadow-d), inset 1px 1px 3px var(--shadow-d);
+}
+
+.btn-fn {
+  background: var(--btn-fn); color: var(--accent);
+  font-size: 13px;
+  box-shadow: 3px 3px 8px var(--shadow-d), -2px -2px 6px var(--shadow-l);
+}
+
+.btn-fn:active { transform: scale(0.94); box-shadow: inset 1px 1px 3px var(--shadow-d); }
+
+.btn-op {
+  background: var(--btn-op); color: var(--accent);
+  font-size: 20px;
+  box-shadow: 3px 3px 8px var(--shadow-d), -2px -2px 6px var(--shadow-l);
+}
+
+.btn-op:active { transform: scale(0.94); box-shadow: inset 1px 1px 3px var(--shadow-d); }
+.btn-op.active { background: var(--accent); color: var(--text-on-eq); }
+
+.btn-eq {
+  background: var(--btn-eq); color: var(--text-on-eq);
+  font-size: 22px;
+  box-shadow: 3px 3px 10px var(--shadow-d), -2px -2px 6px var(--shadow-l);
+}
+
+.btn-eq:active { transform: scale(0.94); box-shadow: inset 1px 1px 4px rgba(0,0,0,0.2); }
+
+.btn-sci {
+  background: var(--btn-sci); color: var(--accent);
+  font-size: 11px; letter-spacing: 0.02em;
+  box-shadow: 2px 2px 6px var(--shadow-d), -1px -1px 4px var(--shadow-l);
+}
+
+.btn-sci:active { transform: scale(0.94); box-shadow: inset 1px 1px 3px var(--shadow-d); }
+
+.span2 { grid-column: span 2; text-align: left; padding-left: 22px; }
+
+/* ── Ripple ──────────────────────────────────────── */
+.ripple {
+  position: absolute; border-radius: 50%;
+  background: rgba(128,128,128,0.18);
+  animation: ripple-anim 0.35s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ripple-anim {
+  from { transform: scale(0); opacity: 1; }
+  to   { transform: scale(3); opacity: 0; }
+}
+
+@keyframes flash {
+  from { opacity: 0.3; } to { opacity: 1; }
+}
+
+.flash { animation: flash 0.15s ease-out; }
+
+/* ── Watermark ───────────────────────────────────── */
+.watermark {
+  text-align: center; margin-top: 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; font-weight: 300;
+  letter-spacing: 0.1em;
+  color: var(--ctrl-color);
+}
+
+/* ── Scrollbar ───────────────────────────────────── */
+.history-list::-webkit-scrollbar { width: 3px; }
+.history-list::-webkit-scrollbar-thumb { background: var(--hist-border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="device">
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="notch"></div>
+    <div class="controls">
+      <button class="ctrl-btn active" id="soundBtn" title="Suara">🔔</button>
+      <button class="ctrl-btn" id="historyBtn" title="Riwayat">🕐</button>
+      <button class="ctrl-btn" id="themeBtn" title="Tema">◐</button>
+      <!-- Theme picker -->
+      <div class="theme-picker" id="themePicker">
+        <button class="theme-opt active" data-theme="cream" onclick="setTheme('cream',this)">
+          <span class="theme-dot" style="background:#DDDCD7;border:1.5px solid #aaa;"></span>Cream
+        </button>
+        <button class="theme-opt" data-theme="dark" onclick="setTheme('dark',this)">
+          <span class="theme-dot" style="background:#1A1A1A;border:1.5px solid #444;"></span>Dark
+        </button>
+        <button class="theme-opt" data-theme="midnight" onclick="setTheme('midnight',this)">
+          <span class="theme-dot" style="background:#4F5FFF;"></span>Midnight
+        </button>
+        <button class="theme-opt" data-theme="forest" onclick="setTheme('forest',this)">
+          <span class="theme-dot" style="background:#5A8A44;"></span>Forest
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Display (tap to copy) -->
+  <div class="display" id="display" onclick="copyResult()">
+    <div class="copy-flash" id="copyFlash"></div>
+    <div class="copy-toast" id="copyToast">copied ✓</div>
+    <div class="display-expr" id="expr"></div>
+    <div class="display-result" id="result">0</div>
+  </div>
+
+  <!-- History panel -->
+  <div class="history-panel" id="historyPanel">
+    <div class="history-header">
+      <div class="history-title">Riwayat</div>
+      <button class="history-clear" onclick="clearHistory()">hapus semua</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty" id="historyEmpty">Belum ada perhitungan</div>
+    </div>
+  </div>
+
+  <!-- Mode toggle -->
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeStd" onclick="setMode('standard')">STANDARD</button>
+    <button class="mode-btn" id="modeSci" onclick="setMode('scientific')">SAINTIFIK</button>
+  </div>
+
+  <!-- Scientific grid -->
+  <div class="grid-sci" id="sciGrid">
+    <button class="btn-sci" data-action="sci" data-fn="sin">sin</button>
+    <button class="btn-sci" data-action="sci" data-fn="cos">cos</button>
+    <button class="btn-sci" data-action="sci" data-fn="tan">tan</button>
+    <button class="btn-sci" data-action="sci" data-fn="log">log</button>
+    <button class="btn-sci" data-action="sci" data-fn="ln">ln</button>
+    <button class="btn-sci" data-action="sci" data-fn="sqrt">√</button>
+    <button class="btn-sci" data-action="sci" data-fn="sq">x²</button>
+    <button class="btn-sci" data-action="sci" data-fn="pi">π</button>
+  </div>
+
+  <!-- Main grid -->
+  <div class="grid">
+    <button class="btn-fn" data-action="clear">AC</button>
+    <button class="btn-fn" data-action="sign">+/−</button>
+    <button class="btn-fn" data-action="percent">%</button>
+    <button class="btn-op" data-action="op" data-op="÷">÷</button>
+
+    <button class="btn-num" data-action="num" data-val="7">7</button>
+    <button class="btn-num" data-action="num" data-val="8">8</button>
+    <button class="btn-num" data-action="num" data-val="9">9</button>
+    <button class="btn-op" data-action="op" data-op="×">×</button>
+
+    <button class="btn-num" data-action="num" data-val="4">4</button>
+    <button class="btn-num" data-action="num" data-val="5">5</button>
+    <button class="btn-num" data-action="num" data-val="6">6</button>
+    <button class="btn-op" data-action="op" data-op="−">−</button>
+
+    <button class="btn-num" data-action="num" data-val="1">1</button>
+    <button class="btn-num" data-action="num" data-val="2">2</button>
+    <button class="btn-num" data-action="num" data-val="3">3</button>
+    <button class="btn-op" data-action="op" data-op="+">+</button>
+
+    <button class="btn-num span2" data-action="num" data-val="0">0</button>
+    <button class="btn-num" data-action="decimal">.</button>
+    <button class="btn-eq" data-action="equals">=</button>
+  </div>
+
+  <div class="watermark">by KaiOverCooked</div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────
+const resultEl  = document.getElementById('result');
+const exprEl    = document.getElementById('expr');
+const histPanel = document.getElementById('historyPanel');
+const histList  = document.getElementById('historyList');
+const histEmpty = document.getElementById('historyEmpty');
+const soundBtn  = document.getElementById('soundBtn');
+const histBtn   = document.getElementById('historyBtn');
+const themeBtn  = document.getElementById('themeBtn');
+const themePicker = document.getElementById('themePicker');
+const copyFlash = document.getElementById('copyFlash');
+const copyToast = document.getElementById('copyToast');
+
+let current        = '0';
+let previous       = '';
+let operator       = null;
+let justCalc       = false;
+let waitingForNext = false;
+let soundOn        = true;
+let historyOpen    = false;
+let history        = [];
+let sciMode        = false;
+let themePickerOpen = false;
+
+// ── Audio ────────────────────────────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function playClick(type = 'num') {
+  if (!soundOn) return;
+  try {
+    if (!audioCtx) audioCtx = new AudioCtx();
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const configs = {
+      num: { freq: 520, decay: 0.07 },
+      op:  { freq: 660, decay: 0.08 },
+      fn:  { freq: 420, decay: 0.07 },
+      eq:  { freq: 880, decay: 0.1  },
+    };
+    const c = configs[type] || configs.num;
+    osc.frequency.setValueAtTime(c.freq, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(c.freq * 0.65, audioCtx.currentTime + c.decay);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + c.decay + 0.02);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + c.decay + 0.03);
+  } catch(e) {}
+}
+
+// ── Sound toggle ─────────────────────────────────────
+soundBtn.addEventListener('click', () => {
+  soundOn = !soundOn;
+  soundBtn.textContent = soundOn ? '🔔' : '🔕';
+  soundBtn.classList.toggle('active', soundOn);
+});
+
+// ── Theme ────────────────────────────────────────────
+themeBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  themePickerOpen = !themePickerOpen;
+  themePicker.classList.toggle('open', themePickerOpen);
+  themeBtn.classList.toggle('active', themePickerOpen);
+});
+
+document.addEventListener('click', () => {
+  themePickerOpen = false;
+  themePicker.classList.remove('open');
+  themeBtn.classList.remove('active');
+});
+
+themePicker.addEventListener('click', e => e.stopPropagation());
+
+function setTheme(name, el) {
+  document.documentElement.setAttribute('data-theme', name);
+  document.querySelectorAll('.theme-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  themePickerOpen = false;
+  themePicker.classList.remove('open');
+  themeBtn.classList.remove('active');
+}
+
+// ── Copy result ──────────────────────────────────────
+let copyTimer;
+function copyResult() {
+  const val = resultEl.textContent;
+  if (!val || val === '0') return;
+  try {
+    navigator.clipboard.writeText(val);
+  } catch(e) {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = val; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  copyFlash.classList.add('show');
+  copyToast.classList.add('show');
+  clearTimeout(copyTimer);
+  copyTimer = setTimeout(() => {
+    copyFlash.classList.remove('show');
+    copyToast.classList.remove('show');
+  }, 900);
+}
+
+// ── History ──────────────────────────────────────────
+histBtn.addEventListener('click', () => {
+  historyOpen = !historyOpen;
+  histPanel.classList.toggle('open', historyOpen);
+  histBtn.classList.toggle('active', historyOpen);
+});
+
+function addHistory(expr, val) {
+  history.unshift({ expr, val });
+  if (history.length > 30) history.pop();
+  renderHistory();
+}
+
+function clearHistory() {
+  history = [];
+  renderHistory();
+}
+
+function renderHistory() {
+  histList.querySelectorAll('.history-item').forEach(e => e.remove());
+  if (history.length === 0) {
+    histEmpty.style.display = 'block';
+    return;
+  }
+  histEmpty.style.display = 'none';
+  history.forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `<span class="history-expr">${h.expr}</span><span class="history-val">${h.val}</span>`;
+    item.addEventListener('click', () => {
+      current = String(h.val);
+      setDisplay(current);
+      justCalc = true;
+    });
+    histList.appendChild(item);
+  });
+}
+
+// ── Mode toggle ──────────────────────────────────────
+function setMode(mode) {
+  sciMode = mode === 'scientific';
+  document.getElementById('sciGrid').classList.toggle('show', sciMode);
+  document.getElementById('modeStd').classList.toggle('active', !sciMode);
+  document.getElementById('modeSci').classList.toggle('active', sciMode);
+}
+
+// ── Display ──────────────────────────────────────────
+function setDisplay(val) {
+  const s = String(val);
+  resultEl.className = 'display-result';
+  if (s.length > 12) resultEl.classList.add('xsmall');
+  else if (s.length > 8) resultEl.classList.add('small');
+  resultEl.textContent = s;
+}
+
+function setExpr(val) { exprEl.textContent = val; }
+
+function flash() {
+  resultEl.classList.remove('flash');
+  void resultEl.offsetWidth;
+  resultEl.classList.add('flash');
+}
+
+// ── Math ─────────────────────────────────────────────
+function toNum(s)  { return parseFloat(s); }
+
+function formatNum(n) {
+  if (isNaN(n)) return 'Error';
+  if (!isFinite(n)) return n > 0 ? '∞' : '-∞';
+  return parseFloat(n.toPrecision(12)).toString();
+}
+
+function calculate(a, op, b) {
+  const x = toNum(a), y = toNum(b);
+  switch(op) {
+    case '+': return x + y;
+    case '−': return x - y;
+    case '×': return x * y;
+    case '÷': return y === 0 ? (x === 0 ? NaN : Infinity) : x / y;
+  }
+}
+
+function applySci(fn) {
+  const x = toNum(current);
+  let res;
+  switch(fn) {
+    case 'sin':  res = Math.sin(x * Math.PI / 180); setExpr(`sin(${x}°)`);  break;
+    case 'cos':  res = Math.cos(x * Math.PI / 180); setExpr(`cos(${x}°)`);  break;
+    case 'tan':  res = Math.tan(x * Math.PI / 180); setExpr(`tan(${x}°)`);  break;
+    case 'log':  res = x <= 0 ? NaN : Math.log10(x); setExpr(`log(${x})`); break;
+    case 'ln':   res = x <= 0 ? NaN : Math.log(x);   setExpr(`ln(${x})`);  break;
+    case 'sqrt': res = x < 0  ? NaN : Math.sqrt(x);  setExpr(`√(${x})`);   break;
+    case 'sq':   res = x * x;    setExpr(`(${x})²`); break;
+    case 'pi':   res = Math.PI;  setExpr('π');        break;
+  }
+  current = formatNum(res);
+  flash(); setDisplay(current);
+  justCalc = true;
+}
+
+function highlightOp(op) {
+  document.querySelectorAll('.btn-op').forEach(b => {
+    b.classList.toggle('active', b.dataset.op === op);
+  });
+}
+
+// ── Ripple ───────────────────────────────────────────
+function addRipple(btn, e) {
+  const r = btn.getBoundingClientRect();
+  const size = Math.max(r.width, r.height);
+  const x = (e.clientX || r.left + r.width/2)  - r.left - size/2;
+  const y = (e.clientY || r.top  + r.height/2) - r.top  - size/2;
+  const rip = document.createElement('span');
+  rip.className = 'ripple';
+  rip.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px;`;
+  btn.appendChild(rip);
+  setTimeout(() => rip.remove(), 400);
+}
+
+// ── Button handler ───────────────────────────────────
+document.querySelectorAll('button[data-action]').forEach(btn => {
+  btn.addEventListener('click', e => {
+    addRipple(btn, e);
+    const action = btn.dataset.action;
+
+    if (action === 'num') {
+      playClick('num');
+      const val = btn.dataset.val;
+      if (justCalc || waitingForNext) { current = val; justCalc = false; waitingForNext = false; }
+      else current = (current === '0') ? val : current + val;
+      if (current.length > 13) return;
+      setDisplay(current);
+      highlightOp(null);
+
+    } else if (action === 'decimal') {
+      playClick('num');
+      if (justCalc || waitingForNext) { current = '0.'; justCalc = false; waitingForNext = false; }
+      else if (!current.includes('.')) current += '.';
+      setDisplay(current);
+
+    } else if (action === 'clear') {
+      playClick('fn');
+      current = '0'; previous = ''; operator = null;
+      justCalc = false; waitingForNext = false;
+      setDisplay('0'); setExpr(''); highlightOp(null);
+
+    } else if (action === 'sign') {
+      playClick('fn');
+      current = formatNum(-toNum(current));
+      setDisplay(current);
+
+    } else if (action === 'percent') {
+      playClick('fn');
+      current = formatNum(toNum(current) / 100);
+      setDisplay(current);
+
+    } else if (action === 'op') {
+      playClick('op');
+      const op = btn.dataset.op;
+      if (operator && !waitingForNext) {
+        const res = calculate(previous, operator, current);
+        current = formatNum(res); flash(); setDisplay(current);
+      }
+      previous = current; operator = op;
+      justCalc = false; waitingForNext = true;
+      setExpr(current + ' ' + op);
+      highlightOp(op);
+
+    } else if (action === 'equals') {
+      if (!operator) return;
+      playClick('eq');
+      const expr = previous + ' ' + operator + ' ' + current;
+      setExpr(expr + ' =');
+      const res = calculate(previous, operator, current);
+      current = formatNum(res);
+      flash(); setDisplay(current);
+      addHistory(expr, current);
+      operator = null; justCalc = true; waitingForNext = false;
+      highlightOp(null);
+
+    } else if (action === 'sci') {
+      playClick('fn');
+      applySci(btn.dataset.fn);
+    }
+  });
+});
+
+// ── Keyboard ─────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (themePickerOpen) return;
+  const map = {
+    '0':'0','1':'1','2':'2','3':'3','4':'4',
+    '5':'5','6':'6','7':'7','8':'8','9':'9',
+    '.':'.', ',':'.', 'Enter':'=', '=':'=',
+    '+':'+', '-':'−', '*':'×', '/':'÷',
+    'Backspace':'clear', 'Escape':'clear', '%':'%',
+    'c':'copy'
+  };
+  const v = map[e.key];
+  if (!v) return;
+  if (v === 'copy') { copyResult(); return; }
+  const selector =
+    ['0','1','2','3','4','5','6','7','8','9'].includes(v) ? `[data-val="${v}"]`
+    : v === '.' ? '[data-action="decimal"]'
+    : v === '=' ? '[data-action="equals"]'
+    : v === 'clear' ? '[data-action="clear"]'
+    : v === '%' ? '[data-action="percent"]'
+    : `[data-op="${v}"]`;
+  const el = document.querySelector(selector);
+  if (el) el.click();
+});
+</script>
+</body>
+</html>
