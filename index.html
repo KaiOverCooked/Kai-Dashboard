@@ -830,8 +830,8 @@ body::before {
         <div class="card-desc">SCI · HISTORY · SOUND</div>
       </div>
 
-      <div class="tool-card" onclick="showToast('🎹 Piano — coming soon!')">
-        <div class="card-status wip"></div>
+      <div class="tool-card" onclick="openTool('piano')">
+        <div class="card-status ready"></div>
         <div class="card-icon">🎹</div>
         <div class="card-name">Piano</div>
         <div class="card-desc">MIDI · KEYS · SUSTAIN</div>
@@ -851,8 +851,8 @@ body::before {
         <div class="card-desc">HACK · DECRYPT · MATRIX</div>
       </div>
 
-      <div class="tool-card" onclick="showToast('🎵 Music — coming soon!')">
-        <div class="card-status wip"></div>
+      <div class="tool-card" onclick="openTool('music')">
+        <div class="card-status ready"></div>
         <div class="card-icon">🎵</div>
         <div class="card-name">Music</div>
         <div class="card-desc">UPLOAD · VISUALIZER · BG</div>
@@ -865,8 +865,8 @@ body::before {
         <div class="card-desc">REALTIME · ANIMASI · API</div>
       </div>
 
-      <div class="tool-card" onclick="showToast('💬 Chat — coming soon!')">
-        <div class="card-status wip"></div>
+      <div class="tool-card" onclick="openTool('ai')">
+        <div class="card-status ready"></div>
         <div class="card-icon">💬</div>
         <div class="card-name">Chat AI</div>
         <div class="card-desc">BUBBLE · THEMES · HISTORY</div>
@@ -909,7 +909,7 @@ body::before {
 <div id="dock">
   <div class="dock-item active" onclick="scrollTop()" title="Home">🏠<span class="dock-label">home</span></div>
   <div class="dock-item" onclick="openTool('calculator')" title="Calculator">🧮<span class="dock-label">calc</span></div>
-  <div class="dock-item" onclick="showToast('🎹 Piano — coming soon!')" title="Piano">🎹<span class="dock-label">piano</span></div>
+  <div class="dock-item" onclick="openTool('piano')" title="Piano">🎹<span class="dock-label">piano</span></div>
   <div class="dock-item" onclick="showToast('📝 Notes — coming soon!')" title="Notes">📝<span class="dock-label">notes</span></div>
   <div class="dock-sep"></div>
   <div class="dock-item" onclick="showToast('💀 Terminal — coming soon!')" title="Terminal">💀<span class="dock-label">term</span></div>
