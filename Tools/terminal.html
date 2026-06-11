@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Terminal — KaiOverCooked</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0A0A0A;
+  --bg2:     #111111;
+  --bg3:     #1A1A1A;
+  --line:    rgba(255,255,255,0.07);
+  --line2:   rgba(255,255,255,0.13);
+  --text:    #E8E8E6;
+  --text2:   #888884;
+  --text3:   #444440;
+  --dim:     #2A2A2A;
+  --prompt:  #E8E8E6;
+  --success: #AAAAAA;
+  --warn:    #CCCCCC;
+  --error:   #888888;
+}
+
+html, body {
+  height: 100%; width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  overflow: hidden;
+}
+
+/* CRT subtle scanlines */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255,255,255,0.012) 2px,
+    rgba(255,255,255,0.012) 3px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* grain */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025; pointer-events: none; z-index: 9997;
+}
+
+/* ── Layout ─────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ── Title bar ───────────────────────────────────── */
+#titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.tb-dots { display: flex; gap: 6px; }
+.tb-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+
+.tb-name {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--text3);
+  text-transform: uppercase;
+}
+
+.tb-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tb-tag {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--text3);
+  border: 1px solid var(--line);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.tb-btn {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text3);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tb-btn:hover { color: var(--text2); border-color: var(--line2); }
+
+/* ── Output area ─────────────────────────────────── */
+#output {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px;
+  scroll-behavior: smooth;
+  line-height: 1.65;
+}
+
+#output::-webkit-scrollbar { width: 3px; }
+#output::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 2px; }
+
+/* ── Output lines ────────────────────────────────── */
+.line {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  white-space: pre-wrap;
+  word-break: break-all;
+  min-height: 1.65em;
+  animation: line-in 0.08s ease both;
+}
+
+@keyframes line-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.line.prompt-line { color: var(--prompt); }
+.line.output      { color: var(--text2); }
+.line.success     { color: var(--success); }
+.line.warn        { color: var(--warn); }
+.line.error       { color: var(--error); }
+.line.dim         { color: var(--text3); }
+.line.blank       { }
+.line.header      { color: var(--text); font-weight: 500; letter-spacing: 0.06em; }
+.line.matrix-line { color: var(--text3); font-size: 11px; letter-spacing: 0.04em; }
+.line.progress    { color: var(--text2); }
+.line.ascii       { color: var(--text3); font-size: 10px; line-height: 1.3; }
+
+/* typing cursor blink on last line */
+.typing-cursor::after {
+  content: '█';
+  animation: cur-blink 0.8s step-end infinite;
+  color: var(--text2);
+}
+@keyframes cur-blink {
+  0%,100% { opacity: 1; } 50% { opacity: 0; }
+}
+
+/* ── Input area ──────────────────────────────────── */
+#inputArea {
+  border-top: 1px solid var(--line);
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+.input-prompt {
+  font-size: 12px;
+  color: var(--text2);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+#cmdInput {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  caret-color: var(--text);
+}
+
+#cmdInput::placeholder { color: var(--text3); }
+
+/* ── Matrix canvas overlay ───────────────────────── */
+#matrixCanvas {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  cursor: pointer;
+}
+
+.matrix-exit-hint {
+  position: fixed;
+  bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(200,200,200,0.4);
+  letter-spacing: 0.12em;
+  z-index: 101;
+  display: none;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Title bar -->
+  <div id="titlebar">
+    <div class="tb-dots">
+      <div class="tb-dot"></div>
+      <div class="tb-dot"></div>
+      <div class="tb-dot"></div>
+    </div>
+    <div class="tb-name">kai@terminal ~ $</div>
+    <div class="tb-right">
+      <span class="tb-tag">v0.1</span>
+      <button class="tb-btn" onclick="clearTerminal()">clear</button>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div id="output"></div>
+
+  <!-- Input -->
+  <div id="inputArea">
+    <div class="input-prompt" id="inputPrompt">kai@terminal ~ $</div>
+    <input type="text" id="cmdInput" placeholder="type a command..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+  </div>
+</div>
+
+<!-- Matrix canvas -->
+<canvas id="matrixCanvas"></canvas>
+<div class="matrix-exit-hint" id="matrixHint">[ click or press any key to exit ]</div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+const output   = document.getElementById('output');
+const cmdInput = document.getElementById('cmdInput');
+let cmdHistory = [];
+let histIdx    = -1;
+let busy       = false;
+let matrixAnim = null;
+
+// ── Boot sequence ─────────────────────────────────────
+const BOOT = [
+  { text: '  ', cls: 'blank', delay: 0 },
+  { text: '██╗  ██╗ █████╗ ██╗    ████████╗ ██████╗  ██████╗ ██╗     ███████╗', cls: 'ascii', delay: 80 },
+  { text: '██║ ██╔╝██╔══██╗██║    ╚══██╔══╝██╔═══██╗██╔═══██╗██║     ██╔════╝', cls: 'ascii', delay: 100 },
+  { text: '█████╔╝ ███████║██║       ██║   ██║   ██║██║   ██║██║     ███████╗', cls: 'ascii', delay: 120 },
+  { text: '██╔═██╗ ██╔══██║██║       ██║   ██║   ██║██║   ██║██║     ╚════██║', cls: 'ascii', delay: 140 },
+  { text: '██║  ██╗██║  ██║███████╗  ██║   ╚██████╔╝╚██████╔╝███████╗███████║', cls: 'ascii', delay: 160 },
+  { text: '╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝  ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝╚══════╝', cls: 'ascii', delay: 180 },
+  { text: ' ', cls: 'blank', delay: 220 },
+  { text: 'KaiTools Terminal  v0.1.0 — by KaiOverCooked', cls: 'dim', delay: 260 },
+  { text: 'OS buatan anak insomnia. All systems nominal.', cls: 'dim', delay: 300 },
+  { text: ' ', cls: 'blank', delay: 320 },
+  { text: 'Type "help" for available commands.', cls: 'output', delay: 380 },
+  { text: ' ', cls: 'blank', delay: 400 },
+];
+
+// ── Commands ──────────────────────────────────────────
+const COMMANDS = {
+  help, hack, decrypt, matrix, sudo, whoami, ls, pwd,
+  clear: clearTerminal,
+  date: cmdDate,
+  echo: cmdEcho,
+  ping: cmdPing,
+  exit: cmdExit,
+  reboot: cmdReboot,
+  neofetch: cmdNeofetch,
+  rm: cmdRm,
+  'rm -rf /': cmdRmRf,
+};
+
+// ── Output helpers ────────────────────────────────────
+function print(text = '', cls = 'output', delay = 0) {
+  return new Promise(res => {
+    setTimeout(() => {
+      const div = document.createElement('div');
+      div.className = 'line ' + cls;
+      div.textContent = text;
+      output.appendChild(div);
+      output.scrollTop = output.scrollHeight;
+      res();
+    }, delay);
+  });
+}
+
+async function printLines(lines, baseDelay = 0, gap = 30) {
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (typeof l === 'string') await print(l, 'output', baseDelay + i * gap);
+    else await print(l.text, l.cls || 'output', baseDelay + i * gap);
+  }
+}
+
+function typewriter(text, cls = 'output', speed = 18) {
+  return new Promise(res => {
+    const div = document.createElement('div');
+    div.className = 'line ' + cls + ' typing-cursor';
+    div.textContent = '';
+    output.appendChild(div);
+    let i = 0;
+    const iv = setInterval(() => {
+      div.textContent += text[i++];
+      output.scrollTop = output.scrollHeight;
+      if (i >= text.length) {
+        clearInterval(iv);
+        div.classList.remove('typing-cursor');
+        res();
+      }
+    }, speed);
+  });
+}
+
+async function fakeProgress(label, steps = 20, totalMs = 1800) {
+  const delay = totalMs / steps;
+  for (let i = 1; i <= steps; i++) {
+    await new Promise(r => setTimeout(r, delay));
+    const pct  = Math.round((i / steps) * 100);
+    const filled = Math.round((i / steps) * 24);
+    const bar = '█'.repeat(filled) + '░'.repeat(24 - filled);
+    // update last line
+    const lines = output.querySelectorAll('.line.progress');
+    const last  = lines[lines.length - 1];
+    if (last && last.dataset.label === label) {
+      last.textContent = `${label}  [${bar}]  ${pct}%`;
+    } else {
+      const div = document.createElement('div');
+      div.className = 'line progress';
+      div.dataset.label = label;
+      div.textContent = `${label}  [${bar}]  ${pct}%`;
+      output.appendChild(div);
+    }
+    output.scrollTop = output.scrollHeight;
+  }
+}
+
+function blank() { return print('', 'blank'); }
+
+function printPrompt(cmd) {
+  print(`kai@terminal ~ $ ${cmd}`, 'prompt-line');
+}
+
+// ── help ──────────────────────────────────────────────
+async function help() {
+  await blank();
+  await print('AVAILABLE COMMANDS', 'header');
+  await print('─────────────────────────────────────────────', 'dim');
+  const cmds = [
+    ['help',        'show this message'],
+    ['hack',        'initiate target breach sequence'],
+    ['decrypt',     'decrypt intercepted data packet'],
+    ['matrix',      'enter the matrix'],
+    ['sudo',        'attempt privilege escalation'],
+    ['whoami',      'display current user profile'],
+    ['neofetch',    'system information'],
+    ['ls',          'list directory contents'],
+    ['pwd',         'print working directory'],
+    ['date',        'display current timestamp'],
+    ['ping',        'ping a host (e.g. ping google.com)'],
+    ['echo',        'echo text back (e.g. echo hello)'],
+    ['rm -rf /',    'definitely do not run this'],
+    ['reboot',      'reboot the system'],
+    ['clear',       'clear terminal'],
+    ['exit',        'exit terminal'],
+  ];
+  for (const [cmd, desc] of cmds) {
+    await print(`  ${cmd.padEnd(16)} — ${desc}`, 'output', 0);
+  }
+  await blank();
+}
+
+// ── hack ──────────────────────────────────────────────
+async function hack() {
+  const targets = [
+    'gov.database.internal', '192.168.1.1', 'pentagon.mil.net',
+    'secure.bank-vault.io', 'nsa.classified.gov', 'target-server-07.local',
+  ];
+  const target = targets[Math.floor(Math.random() * targets.length)];
+  const ip = `${rnd(10,220)}.${rnd(0,255)}.${rnd(0,255)}.${rnd(1,254)}`;
+
+  await blank();
+  await typewriter(`[INIT] Scanning target: ${target}`, 'warn', 20);
+  await new Promise(r => setTimeout(r, 300));
+  await print(`[INFO] Resolved IP: ${ip}`, 'dim');
+  await print(`[INFO] OS fingerprint: Linux 5.15.0 x86_64`, 'dim');
+  await print(`[INFO] Open ports: 22, 80, 443, 8080, 3306`, 'dim');
+  await blank();
+
+  await print('[STEP 1/5] Port scanning...', 'output');
+  await fakeProgress('PORTSCAN', 15, 1200);
+  await print('[STEP 1/5] Done. 5 ports exposed.', 'success');
+  await blank();
+
+  await print('[STEP 2/5] Injecting payload...', 'output');
+  await fakeProgress('PAYLOAD ', 20, 1800);
+  await print('[STEP 2/5] Done. Payload deployed.', 'success');
+  await blank();
+
+  await print('[STEP 3/5] Bypassing firewall...', 'output');
+  await fakeProgress('FIREWALL', 18, 1500);
+  await print('[STEP 3/5] Done. Firewall neutralized.', 'success');
+  await blank();
+
+  await print('[STEP 4/5] Extracting credentials...', 'output');
+  await fakeProgress('EXTRACT ', 12, 1000);
+  const user = ['admin','root','sysop','kai','jdoe'][rnd(0,4)];
+  const pass = Math.random().toString(36).slice(2,10) + '!';
+  await print(`[STEP 4/5] Found → ${user}:${pass}`, 'success');
+  await blank();
+
+  await print('[STEP 5/5] Establishing backdoor...', 'output');
+  await fakeProgress('BACKDOOR', 10, 900);
+  await print('[STEP 5/5] Done. Persistent access established.', 'success');
+  await blank();
+
+  await typewriter(`[SUCCESS] ${target} has been compromised.`, 'warn', 22);
+  await print(`[INFO]    Session token: ${randomHex(32)}`, 'dim');
+  await print(`[WARN]    Remember: this is purely fictional. 😈`, 'dim');
+  await blank();
+}
+
+// ── decrypt ───────────────────────────────────────────
+async function decrypt() {
+  const secrets = [
+    'THE PACKAGE IS UNDER THE BRIDGE',
+    'OPERATION MIDNIGHT SUN IS A GO',
+    'KAI KNOWS TOO MUCH. ELIMINATE.',
+    'THE REAL HACK WAS THE FRIENDS WE MADE',
+    'DO NOT LOOK UNDER THE BED',
+    'PASSWORD IS: hunter2',
+    'WE ARE NOT ALONE',
+  ];
+
+  await blank();
+  await typewriter('[INIT] Intercepted encrypted packet...', 'warn', 18);
+  await blank();
+
+  // show fake encrypted blob
+  const blob = Array.from({length: 4}, () => randomHex(32)).join('\n       ');
+  await print(`[DATA] ${blob}`, 'dim');
+  await blank();
+
+  await print('[STEP 1/3] Analyzing cipher...', 'output');
+  await fakeProgress('CIPHER  ', 10, 900);
+  await print('[STEP 1/3] Detected: AES-256-CBC', 'success');
+  await blank();
+
+  await print('[STEP 2/3] Bruteforcing key...', 'output');
+  for (let i = 0; i < 4; i++) {
+    await new Promise(r => setTimeout(r, 300));
+    await print(`  [ATTEMPT ${i+1}] Key: ${randomHex(8)} → FAIL`, 'dim');
+  }
+  await new Promise(r => setTimeout(r, 400));
+  await print(`  [ATTEMPT 5] Key: ${randomHex(8)} → SUCCESS ✓`, 'success');
+  await blank();
+
+  await print('[STEP 3/3] Decrypting payload...', 'output');
+  await fakeProgress('DECRYPT ', 14, 1100);
+  await blank();
+
+  const msg = secrets[Math.floor(Math.random() * secrets.length)];
+  await typewriter(`[RESULT] "${msg}"`, 'warn', 28);
+  await blank();
+  await print('[DONE]   Packet decrypted successfully.', 'dim');
+  await blank();
+}
+
+// ── matrix ────────────────────────────────────────────
+function matrix() {
+  const canvas = document.getElementById('matrixCanvas');
+  const hint   = document.getElementById('matrixHint');
+  const ctx    = canvas.getContext('2d');
+  canvas.style.display = 'block';
+  hint.style.display   = 'block';
+
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const fontSize = 13;
+  const cols = Math.floor(canvas.width / fontSize);
+  const drops = Array(cols).fill(1);
+
+  function draw() {
+    ctx.fillStyle = 'rgba(10,10,10,0.06)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = `${fontSize}px 'IBM Plex Mono'`;
+
+    for (let i = 0; i < drops.length; i++) {
+      const grey = Math.floor(Math.random() * 80) + 100;
+      ctx.fillStyle = `rgb(${grey},${grey},${grey})`;
+      ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+
+  matrixAnim = setInterval(draw, 40);
+
+  function exitMatrix() {
+    clearInterval(matrixAnim); matrixAnim = null;
+    canvas.style.display = 'none';
+    hint.style.display   = 'none';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.removeEventListener('click', exitMatrix);
+    document.removeEventListener('keydown', exitMatrix);
+    print('', 'blank');
+    print('[MATRIX] Session terminated. Welcome back.', 'dim');
+    print('', 'blank');
+    setBusy(false);
+    cmdInput.focus();
+  }
+
+  canvas.addEventListener('click', exitMatrix);
+  document.addEventListener('keydown', exitMatrix, { once: true });
+  // keep busy while matrix is open — don't setBusy(false) yet
+}
+
+// ── sudo ──────────────────────────────────────────────
+async function sudo() {
+  await blank();
+  await typewriter('[SUDO] Requesting root privileges...', 'warn', 18);
+  await new Promise(r => setTimeout(r, 500));
+  await print('[AUTH] Password required:', 'output');
+  await new Promise(r => setTimeout(r, 800));
+  await print('       ••••••••', 'dim');
+  await new Promise(r => setTimeout(r, 1000));
+  await print('[AUTH] Verifying...', 'output');
+  await fakeProgress('VERIFY  ', 8, 700);
+  await new Promise(r => setTimeout(r, 300));
+
+  const outcomes = [
+    async () => {
+      await print('[DENIED] Incorrect password. (3 attempts remaining)', 'error');
+      await print('[WARN]   This incident will be reported.', 'dim');
+    },
+    async () => {
+      await print('[DENIED] kai is not in the sudoers file.', 'error');
+      await print('[WARN]   This incident will be reported.', 'dim');
+    },
+    async () => {
+      await print('[ACCESS GRANTED] Welcome, root.', 'success');
+      await blank();
+      await print('root@terminal ~ #', 'warn');
+      await new Promise(r => setTimeout(r, 600));
+      await print('Just kidding lol. 😂', 'dim');
+    },
+  ];
+
+  await outcomes[rnd(0, outcomes.length - 1)]();
+  await blank();
+}
+
+// ── whoami ────────────────────────────────────────────
+async function whoami() {
+  await blank();
+  const lines = [
+    { text: 'USER PROFILE', cls: 'header' },
+    { text: '─────────────────────────────────', cls: 'dim' },
+    { text: `  handle    : KaiOverCooked`, cls: 'output' },
+    { text: `  role      : Frontend Dev / Insomnia Engineer`, cls: 'output' },
+    { text: `  os        : Android + GitHub Pages`, cls: 'output' },
+    { text: `  stack     : HTML · CSS · JS · zero framework`, cls: 'output' },
+    { text: `  status    : building KaiTools at ${new Date().toLocaleTimeString()}`, cls: 'output' },
+    { text: `  mood      : ☕ caffeinated`, cls: 'output' },
+    { text: `  ip        : ${rnd(10,220)}.${rnd(0,255)}.${rnd(0,255)}.${rnd(1,254)} (spoofed)`, cls: 'dim' },
+    { text: '', cls: 'blank' },
+  ];
+  await printLines(lines, 0, 40);
+}
+
+// ── neofetch ──────────────────────────────────────────
+async function cmdNeofetch() {
+  const now  = new Date();
+  const up   = Math.floor(Math.random() * 72) + 1;
+  await blank();
+  const lines = [
+    { text: '    ██╗  ██╗ █████╗ ██╗', cls: 'ascii' },
+    { text: '    ██║ ██╔╝██╔══██╗██║         kai@kaitools', cls: 'ascii' },
+    { text: '    █████╔╝ ███████║██║         ────────────', cls: 'ascii' },
+    { text: '    ██╔═██╗ ██╔══██║██║         OS: KaiOS 0.1 (insomnia edition)', cls: 'ascii' },
+    { text: '    ██║  ██╗██║  ██║██║         Host: GitHub Pages', cls: 'ascii' },
+    { text: '    ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝         Kernel: vanilla JS 5.0', cls: 'ascii' },
+    { text: `                                Uptime: ${up} hours`, cls: 'ascii' },
+    { text: `                                Shell: kai-terminal v0.1`, cls: 'ascii' },
+    { text: `                                Resolution: ${window.innerWidth}x${window.innerHeight}`, cls: 'ascii' },
+    { text: `                                Theme: monochrome dark`, cls: 'ascii' },
+    { text: `                                Font: IBM Plex Mono`, cls: 'ascii' },
+    { text: `                                Time: ${now.toLocaleTimeString()}`, cls: 'ascii' },
+    { text: '', cls: 'blank' },
+  ];
+  await printLines(lines, 0, 35);
+}
+
+// ── ls ────────────────────────────────────────────────
+async function ls() {
+  await blank();
+  await print('drwxr-xr-x  kai  staff  —  .', 'dim');
+  await print('drwxr-xr-x  kai  staff  —  ..', 'dim');
+  const files = [
+    ['drwxr-xr-x', 'assets/'],
+    ['-rw-r--r--', 'index.html'],
+    ['-rw-r--r--', 'calculator.html'],
+    ['-rw-r--r--', 'music.html'],
+    ['-rw-r--r--', 'ai.html'],
+    ['-rw-r--r--', 'piano.html'],
+    ['-rw-r--r--', 'terminal.html'],
+    ['-rw-r--r--', 'notes.html'],
+    ['-rw-r--r--', 'weather.html'],
+    ['-r--------', 'secrets.txt'],
+    ['-r--------', '.env'],
+  ];
+  for (const [perm, name] of files) {
+    const isSecret = name.includes('secret') || name.includes('.env');
+    await print(`${perm}  kai  staff  ${String(rnd(1,999)).padStart(4)}  ${name}`, isSecret ? 'warn' : 'output');
+  }
+  await blank();
+}
+
+// ── pwd ───────────────────────────────────────────────
+async function pwd() {
+  await blank();
+  await print('/home/kai/kaitools', 'output');
+  await blank();
+}
+
+// ── date ──────────────────────────────────────────────
+async function cmdDate() {
+  await blank();
+  await print(new Date().toString(), 'output');
+  await blank();
+}
+
+// ── echo ──────────────────────────────────────────────
+async function cmdEcho(args) {
+  await blank();
+  await print(args || '(nothing to echo)', 'output');
+  await blank();
+}
+
+// ── ping ──────────────────────────────────────────────
+async function cmdPing(host) {
+  if (!host) { await blank(); await print('[ERROR] Usage: ping <host>', 'error'); await blank(); return; }
+  await blank();
+  await print(`PING ${host}: 56 data bytes`, 'output');
+  for (let i = 0; i < 4; i++) {
+    await new Promise(r => setTimeout(r, 400));
+    const ms = rnd(8, 120);
+    await print(`64 bytes from ${host}: icmp_seq=${i} ttl=57 time=${ms}.${rnd(0,9)} ms`, 'success');
+  }
+  await blank();
+  await print(`--- ${host} ping statistics ---`, 'dim');
+  await print(`4 packets transmitted, 4 received, 0% packet loss`, 'dim');
+  await blank();
+}
+
+// ── rm -rf / ─────────────────────────────────────────
+async function cmdRmRf() {
+  await blank();
+  await typewriter('[WARN] rm -rf / detected. Initiating system wipe...', 'warn', 20);
+  await fakeProgress('WIPING  ', 20, 2000);
+  await blank();
+  await print('[CRITICAL] /home/kai deleted', 'error');
+  await print('[CRITICAL] /etc deleted', 'error');
+  await print('[CRITICAL] /var deleted', 'error');
+  await print('[CRITICAL] /usr deleted', 'error');
+  await new Promise(r => setTimeout(r, 500));
+  await blank();
+  await print('just kidding lol 😂 your files are fine.', 'dim');
+  await blank();
+}
+
+// ── rm ────────────────────────────────────────────────
+async function cmdRm(args) {
+  if (!args) { await blank(); await print('[ERROR] Usage: rm <file>', 'error'); await blank(); return; }
+  await blank();
+  await print(`rm: ${args}: Operation not permitted`, 'error');
+  await blank();
+}
+
+// ── reboot ────────────────────────────────────────────
+async function cmdReboot() {
+  await blank();
+  await print('[REBOOT] Saving state...', 'output');
+  await fakeProgress('SAVE    ', 8, 600);
+  await print('[REBOOT] Unmounting filesystems...', 'output');
+  await new Promise(r => setTimeout(r, 500));
+  await print('[REBOOT] System going down NOW.', 'warn');
+  await new Promise(r => setTimeout(r, 1200));
+  clearTerminal();
+  await new Promise(r => setTimeout(r, 300));
+  bootSequence();
+}
+
+// ── exit ─────────────────────────────────────────────
+async function cmdExit() {
+  await blank();
+  await typewriter('Goodbye, KaiOverCooked. Stay dangerous. 👋', 'dim', 22);
+  await new Promise(r => setTimeout(r, 800));
+  await blank();
+  await print('(refresh to restart)', 'dim');
+  cmdInput.disabled = true;
+}
+
+// ── Input handling ─────────────────────────────────────
+cmdInput.addEventListener('keydown', async e => {
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (histIdx < cmdHistory.length - 1) { histIdx++; cmdInput.value = cmdHistory[cmdHistory.length - 1 - histIdx]; }
+    return;
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (histIdx > 0) { histIdx--; cmdInput.value = cmdHistory[cmdHistory.length - 1 - histIdx]; }
+    else { histIdx = -1; cmdInput.value = ''; }
+    return;
+  }
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const partial = cmdInput.value.trim();
+    const match = Object.keys(COMMANDS).find(c => c.startsWith(partial) && c !== partial);
+    if (match) cmdInput.value = match;
+    return;
+  }
+
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+
+  const raw = cmdInput.value.trim();
+  if (!raw) return;
+  if (busy) return;
+
+  cmdInput.value = '';
+  histIdx = -1;
+  cmdHistory.push(raw);
+
+  printPrompt(raw);
+
+  const parts = raw.split(' ');
+  const cmd   = parts[0].toLowerCase();
+  const args  = parts.slice(1).join(' ');
+
+  // handle rm -rf /
+  if (raw.toLowerCase().startsWith('rm -rf')) {
+    setBusy(true);
+    await cmdRmRf();
+    setBusy(false);
+    return;
+  }
+
+  if (COMMANDS[cmd]) {
+    if (cmd === 'matrix') {
+      setBusy(true);
+      await print('', 'blank');
+      await print('[MATRIX] Entering the matrix... (click or press any key to exit)', 'dim');
+      await new Promise(r => setTimeout(r, 600));
+      matrix(); // matrix manages its own busy state
+    } else {
+      setBusy(true);
+      if (cmd === 'echo') await cmdEcho(args);
+      else if (cmd === 'ping') await cmdPing(args);
+      else if (cmd === 'rm') await cmdRm(args);
+      else await COMMANDS[cmd]();
+      setBusy(false);
+    }
+  } else {
+    await blank();
+    await print(`command not found: ${cmd}`, 'error');
+    await print(`type "help" to see available commands.`, 'dim');
+    await blank();
+  }
+});
+
+function setBusy(state) {
+  busy = state;
+  cmdInput.disabled = state;
+  if (!state) { cmdInput.disabled = false; cmdInput.focus(); }
+}
+
+// ── Utilities ─────────────────────────────────────────
+function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function randomHex(len) { return Array.from({length: len}, () => '0123456789abcdef'[rnd(0,15)]).join(''); }
+
+function clearTerminal() {
+  output.innerHTML = '';
+}
+
+// ── Boot ──────────────────────────────────────────────
+async function bootSequence() {
+  busy = true;
+  cmdInput.disabled = true;
+  for (const l of BOOT) {
+    await print(l.text, l.cls, l.delay);
+  }
+  busy = false;
+  cmdInput.disabled = false;
+  cmdInput.focus();
+}
+
+bootSequence();
+
+// keep input focused
+document.addEventListener('click', () => {
+  if (!cmdInput.disabled) cmdInput.focus();
+});
+</script>
+</body>
+</html>
