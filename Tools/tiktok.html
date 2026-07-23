@@ -896,30 +896,22 @@ async function downloadAllPhotos(images) {
 // ── Download file ─────────────────────────────────────
 async function downloadFile(url, filename, label) {
   toast(`Mendownload ${label}...`);
+
   try {
-    const res = await fetch(url, {mode:'cors'});
-    if (!res.ok) throw new Error('fetch');
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
+    const proxy = "https://kai-download.ikyyverycool12.workers.dev/?url=" + encodeURIComponent(url);
+
+    const a = document.createElement("a");
+    a.href = proxy;
     a.download = filename;
+
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(()=>URL.revokeObjectURL(blobUrl),1000);
+
     toast(`${label} berhasil diunduh ✓`);
-  } catch(e) {
-    try {
-      const a=document.createElement('a');
-      a.href=url;
-      a.download=filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    } catch {}
-    toast('Server tidak mengizinkan rename via browser (CORS).');
-    window.open(url,'_blank');
+  } catch (e) {
+    console.error(e);
+    toast("Download gagal.");
   }
 }
 
