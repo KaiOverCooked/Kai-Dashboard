@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>X Downloader — KaiOverCooked</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:    #0A0A0A;
+  --bg2:   #111111;
+  --bg3:   #1A1A1A;
+  --bg4:   #222222;
+  --line:  rgba(255,255,255,0.07);
+  --line2: rgba(255,255,255,0.13);
+  --text:  #E8E8E6;
+  --text2: #888884;
+  --text3: #444440;
+  --green: #44FF88;
+}
+
+html, body {
+  min-height: 100%; width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025; pointer-events: none; z-index: 9999;
+}
+
+#app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 40px;
+}
+
+/* ── Header ─────────────────────────────────────── */
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.hdr-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.16em;
+  color: var(--text3); text-transform: uppercase;
+}
+
+.hdr-hist-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.06em;
+  padding: 5px 10px; border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--bg2); color: var(--text2);
+  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; gap: 4px;
+}
+.hdr-hist-btn:hover { background: var(--bg3); color: var(--text); border-color: var(--line2); }
+
+/* ── Main ───────────────────────────────────────── */
+#main { padding: 24px 18px; flex: 1; }
+
+.hero-icon {
+  font-size: 36px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.hero-title {
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.03em;
+  text-align: center; margin-bottom: 4px;
+}
+
+.hero-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text3);
+  letter-spacing: 0.08em; text-align: center;
+  margin-bottom: 24px; line-height: 1.6;
+}
+
+/* ── Input area ─────────────────────────────────── */
+.input-section { margin-bottom: 16px; }
+
+.input-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; color: var(--text3);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 8px; display: block;
+}
+
+.input-wrap {
+  display: flex;
+  gap: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 8px 8px 14px;
+  transition: border-color 0.15s;
+}
+
+.input-wrap:focus-within { border-color: var(--line2); }
+
+#urlInput {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; letter-spacing: 0.02em;
+  min-width: 0;
+}
+#urlInput::placeholder { color: var(--text3); }
+
+.paste-btn {
+  background: var(--bg3); border: 1px solid var(--line);
+  border-radius: 8px; padding: 7px 10px;
+  color: var(--text2); cursor: pointer; font-size: 13px;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.paste-btn:hover { background: var(--bg4); color: var(--text); }
+
+.dl-btn {
+  width: 100%;
+  background: var(--text); color: var(--bg);
+  border: none; border-radius: 10px;
+  padding: 13px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px; font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer; transition: all 0.15s;
+  margin-top: 10px;
+}
+.dl-btn:hover { opacity: 0.88; }
+.dl-btn:active { transform: scale(0.98); }
+.dl-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+/* ── Status ─────────────────────────────────────── */
+#status {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text3);
+  letter-spacing: 0.06em; text-align: center;
+  padding: 10px 0; min-height: 36px;
+  transition: color 0.2s;
+}
+#status.loading { color: var(--text2); }
+#status.error   { color: #FF6666; }
+#status.success { color: var(--green); }
+
+.loading-dots::after {
+  content: '';
+  animation: dots 1.2s steps(4, end) infinite;
+}
+@keyframes dots {
+  0%   { content: ''; }
+  25%  { content: '.'; }
+  50%  { content: '..'; }
+  75%  { content: '...'; }
+  100% { content: ''; }
+}
+
+/* ── Result card ────────────────────────────────── */
+#result {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+  animation: fadein 0.3s ease both;
+}
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+#result.show { display: flex; }
+
+.divider {
+  display: flex; align-items: center; gap: 10px;
+  margin: 4px 0;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--line);
+}
+.divider span {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; color: var(--text3);
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+/* Tweet preview card */
+.tweet-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.tweet-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tweet-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg3);
+  flex-shrink: 0;
+}
+
+.tweet-names {}
+.tweet-name {
+  font-size: 13px; font-weight: 700;
+  color: var(--text); letter-spacing: -0.01em;
+  display: flex; align-items: center; gap: 4px;
+}
+.tweet-handle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text3);
+  letter-spacing: 0.02em;
+}
+
+.tweet-text {
+  font-size: 13px; color: var(--text2);
+  line-height: 1.6; margin-bottom: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tweet-media-preview {
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg3);
+  border: 1px solid var(--line);
+  margin-bottom: 4px;
+}
+
+.tweet-media-preview img,
+.tweet-media-preview video {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  display: block;
+}
+
+.media-grid {
+  display: grid;
+  gap: 4px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.media-grid.count-1 { grid-template-columns: 1fr; }
+.media-grid.count-2 { grid-template-columns: 1fr 1fr; }
+.media-grid.count-3 { grid-template-columns: 1fr 1fr; }
+.media-grid.count-4 { grid-template-columns: 1fr 1fr; }
+.media-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media-grid .g-item { background: var(--bg3); overflow: hidden; }
+.media-grid.count-3 .g-item:first-child { grid-row: span 2; }
+
+/* Stats row */
+.stats-row {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.stat-icon { font-size: 16px; margin-bottom: 3px; }
+
+.stat-val {
+  font-size: 14px; font-weight: 700;
+  letter-spacing: -0.02em; color: var(--text);
+}
+
+.stat-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; color: var(--text3);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Section labels within download list */
+.dl-section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--text3); letter-spacing: 0.14em; text-transform: uppercase;
+  margin: 14px 0 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.dl-section-label::after { content:''; flex:1; height:1px; background: var(--line); }
+
+/* Download buttons */
+.download-section { display: flex; flex-direction: column; gap: 8px; }
+
+.dl-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-decoration: none;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.dl-option:hover {
+  background: var(--bg3);
+  border-color: var(--line2);
+  transform: translateY(-1px);
+}
+.dl-option:active { transform: scale(0.99); }
+
+.dl-opt-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.dl-opt-icon { font-size: 20px; flex-shrink: 0; }
+
+.dl-opt-info { min-width: 0; }
+.dl-opt-name {
+  font-size: 13px; font-weight: 700;
+  letter-spacing: -0.01em; color: var(--text);
+}
+.dl-opt-desc {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text3);
+  letter-spacing: 0.04em; margin-top: 2px;
+}
+
+.dl-opt-arrow {
+  font-size: 16px; color: var(--text3);
+  transition: color 0.15s; flex-shrink: 0;
+}
+.dl-option:hover .dl-opt-arrow { color: var(--text); }
+
+/* ── History button/badge ───────────────────────── */
+#histCount {}
+
+/* ── History overlay + bottom sheet ─────────────── */
+#histOverlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 299;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+#histOverlay.show { opacity: 1; pointer-events: all; }
+
+#histPanel {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  z-index: 300;
+  transform: translateY(100%);
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  max-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.8);
+}
+#histPanel.show { transform: translateY(0); pointer-events: all; }
+
+.hist-handle {
+  width: 36px; height: 4px;
+  background: var(--line2);
+  border-radius: 2px;
+  margin: 12px auto 0;
+  flex-shrink: 0;
+}
+
+.hist-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.hist-panel-title { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+
+.hist-clear-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 0.08em;
+  padding: 4px 8px; border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg3); color: var(--text3);
+  cursor: pointer; transition: all 0.12s;
+}
+.hist-clear-btn:hover { color: #FF6666; border-color: rgba(255,102,102,0.3); }
+
+.hist-close-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--bg3); color: var(--text2);
+  cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+}
+.hist-close-btn:hover { background: var(--bg4); color: var(--text); }
+
+.hist-panel-list {
+  overflow-y: auto; flex: 1; padding: 8px 14px 20px;
+}
+.hist-panel-list::-webkit-scrollbar { width: 3px; }
+.hist-panel-list::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.hist-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg3); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 12px;
+  transition: all 0.12s; margin-bottom: 6px;
+}
+
+.hist-item-click {
+  display: flex; align-items: center; gap: 10px;
+  flex: 1; min-width: 0; cursor: pointer;
+}
+.hist-item-click:hover .hist-title { color: var(--text2); }
+
+.hist-thumb {
+  width: 36px; height: 36px;
+  border-radius: 6px; object-fit: cover;
+  background: var(--bg4); flex-shrink: 0;
+}
+
+.hist-info { flex: 1; min-width: 0; }
+.hist-title {
+  font-size: 12px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hist-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text3);
+  letter-spacing: 0.04em; margin-top: 2px;
+}
+
+.hist-empty {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text3);
+  letter-spacing: 0.08em; text-align: center;
+  padding: 16px 0;
+}
+
+/* ── Notice ─────────────────────────────────────── */
+.notice {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text3);
+  letter-spacing: 0.04em; line-height: 1.7;
+  margin-top: 20px;
+}
+.notice strong { color: var(--text2); }
+
+/* ── Toast ──────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--bg3); border: 1px solid var(--line2);
+  border-radius: 8px; padding: 7px 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--text2);
+  letter-spacing: 0.06em;
+  opacity: 0; pointer-events: none;
+  transition: all 0.2s; z-index: 400; white-space: nowrap;
+  max-width: 90%; overflow: hidden; text-overflow: ellipsis;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <div id="header">
+    <div class="hdr-title">KAI · X DL</div>
+    <button class="hdr-hist-btn" onclick="openHistory()" id="histBtn">
+      🕐 <span id="histCount">0</span>
+    </button>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+
+    <div class="hero-icon">𝕏</div>
+    <div class="hero-title">X / Twitter Downloader</div>
+    <div class="hero-sub">paste link tweet · download video, gif, foto<br/>gratis, cepat, langsung di browser</div>
+
+    <!-- Input -->
+    <div class="input-section">
+      <span class="input-label">link X / Twitter</span>
+      <div class="input-wrap">
+        <input id="urlInput" type="url" placeholder="https://x.com/user/status/..."/>
+        <button class="paste-btn" onclick="pasteUrl()" title="Paste">📋</button>
+      </div>
+      <button class="dl-btn" id="fetchBtn" onclick="fetchTweet()">Download</button>
+    </div>
+
+    <!-- Status -->
+    <div id="status"></div>
+
+    <!-- Result -->
+    <div id="result">
+
+      <div class="divider"><span>result</span></div>
+
+      <!-- Tweet preview -->
+      <div class="tweet-card">
+        <div class="tweet-header">
+          <img class="tweet-avatar" id="tweetAvatar" src="" alt=""/>
+          <div class="tweet-names">
+            <div class="tweet-name" id="tweetName">—</div>
+            <div class="tweet-handle" id="tweetHandle">—</div>
+          </div>
+        </div>
+        <div class="tweet-text" id="tweetText"></div>
+        <div id="tweetMediaPreview"></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon">❤️</div>
+          <div class="stat-val" id="statLikes">—</div>
+          <div class="stat-label">likes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔁</div>
+          <div class="stat-val" id="statRetweets">—</div>
+          <div class="stat-label">retweets</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💬</div>
+          <div class="stat-val" id="statReplies">—</div>
+          <div class="stat-label">replies</div>
+        </div>
+      </div>
+
+      <!-- Download options -->
+      <div class="download-section" id="downloadSection"></div>
+
+    </div>
+
+    <!-- Notice -->
+    <div class="notice">
+      <strong>catatan:</strong> tool ini untuk konten yang kamu miliki sendiri atau yang sudah dapat izin dari pembuat konten.<br/>
+      powered by vxtwitter · data tidak disimpan di server manapun.
+    </div>
+
+  </div>
+</div>
+
+<!-- History overlay -->
+<div id="histOverlay" onclick="closeHistory()"></div>
+
+<!-- History panel (bottom sheet) -->
+<div id="histPanel">
+  <div class="hist-handle"></div>
+  <div class="hist-panel-header">
+    <div class="hist-panel-title">Riwayat Download</div>
+    <div style="display:flex;gap:8px;">
+      <button class="hist-clear-btn" onclick="clearAllHistory()">hapus semua</button>
+      <button class="hist-close-btn" onclick="closeHistory()">✕</button>
+    </div>
+  </div>
+  <div class="hist-panel-list" id="historyList"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────
+const HISTORY_KEY = 'kaitools_xdl_history';
+let history = loadHistory();
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+  catch { return []; }
+}
+function saveHistory() {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 20))); }
+  catch {}
+}
+
+// ── RNG filename ──────────────────────────────────────
+function rng() {
+  return Math.floor(Math.random() * 9000000000) + 1000000000;
+}
+
+// ── Paste ─────────────────────────────────────────────
+async function pasteUrl() {
+  try {
+    const text = await navigator.clipboard.readText();
+    document.getElementById('urlInput').value = text;
+    toast('Link dipaste ✓');
+  } catch {
+    document.getElementById('urlInput').focus();
+    toast('Tap kolom → paste manual');
+  }
+}
+
+// ── Fetch tweet ───────────────────────────────────────
+function extractTweetId(url) {
+  const match = url.match(/status\/(\d+)/);
+  return match ? match[1] : null;
+}
+
+async function fetchTweet() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { setStatus('Masukkan link X / Twitter dulu ya!', 'error'); return; }
+  if (!/x\.com|twitter\.com/.test(url)) {
+    setStatus('Link tidak valid. Harus dari x.com atau twitter.com', 'error');
+    return;
+  }
+  const tweetId = extractTweetId(url);
+  if (!tweetId) {
+    setStatus('Tidak bisa menemukan ID tweet dari link ini.', 'error');
+    return;
+  }
+
+  setStatus('<span class="loading-dots">Mengambil tweet</span>', 'loading');
+  document.getElementById('fetchBtn').disabled = true;
+  document.getElementById('result').classList.remove('show');
+
+  try {
+    const apiUrl = `https://api.vxtwitter.com/Twitter/status/${tweetId}`;
+    const res = await fetch(apiUrl);
+    if (!res.ok) throw new Error('Tweet tidak ditemukan atau bersifat privat');
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    renderResult(data, url);
+    setStatus('', '');
+
+  } catch(err) {
+    setStatus(err.message || 'Terjadi kesalahan. Coba lagi.', 'error');
+  }
+
+  document.getElementById('fetchBtn').disabled = false;
+}
+
+// ── Render result ─────────────────────────────────────
+function renderResult(d, originalUrl) {
+  // Tweet header
+  document.getElementById('tweetAvatar').src   = d.user_profile_image_url || '';
+  document.getElementById('tweetName').innerHTML =
+    `${escHtml(d.user_name || 'Unknown')} ${d.user_screen_name ? '' : ''}`;
+  document.getElementById('tweetHandle').textContent = '@' + (d.user_screen_name || 'unknown');
+  document.getElementById('tweetText').textContent   = d.text || '';
+
+  // Stats
+  document.getElementById('statLikes').textContent    = fmtNum(d.likes);
+  document.getElementById('statRetweets').textContent = fmtNum(d.retweets);
+  document.getElementById('statReplies').textContent  = fmtNum(d.replies);
+
+  // Media preview in tweet card
+  const previewEl = document.getElementById('tweetMediaPreview');
+  previewEl.innerHTML = '';
+
+  const media = d.media_extended || d.mediaURLs || [];
+  const hasMedia = media.length > 0;
+
+  if (hasMedia && Array.isArray(media) && typeof media[0] === 'object') {
+    if (media.length === 1) {
+      const m = media[0];
+      const wrap = document.createElement('div');
+      wrap.className = 'tweet-media-preview';
+      if (m.type === 'video' || m.type === 'gif') {
+        wrap.innerHTML = `<video src="${escAttr(m.url)}" poster="${escAttr(m.thumbnail_url || '')}" controls muted></video>`;
+      } else {
+        wrap.innerHTML = `<img src="${escAttr(m.url)}" alt=""/>`;
+      }
+      previewEl.appendChild(wrap);
+    } else {
+      const grid = document.createElement('div');
+      grid.className = `media-grid count-${Math.min(media.length, 4)}`;
+      media.slice(0, 4).forEach(m => {
+        const item = document.createElement('div');
+        item.className = 'g-item';
+        const thumb = m.thumbnail_url || m.url;
+        item.innerHTML = `<img src="${escAttr(thumb)}" alt=""/>`;
+        grid.appendChild(item);
+      });
+      previewEl.appendChild(grid);
+    }
+  }
+
+  // ── Download options ──────────────────────────────
+  const section = document.getElementById('downloadSection');
+  section.innerHTML = '';
+
+  function addLabel(text) {
+    const el = document.createElement('div');
+    el.className = 'dl-section-label';
+    el.innerHTML = `<span>${text}</span>`;
+    section.appendChild(el);
+  }
+
+  function addBtn(icon, name, desc, url, ext, highlight = false) {
+    if (!url) return;
+    const el = document.createElement('div');
+    el.className = 'dl-option';
+    if (highlight) el.style.cssText = 'background:var(--bg3);border-color:var(--line2);';
+    el.innerHTML = `
+      <div class="dl-opt-left">
+        <div class="dl-opt-icon">${icon}</div>
+        <div class="dl-opt-info">
+          <div class="dl-opt-name">${name}</div>
+          <div class="dl-opt-desc">${desc}</div>
+        </div>
+      </div>
+      <div class="dl-opt-arrow">↓</div>
+    `;
+    el.addEventListener('click', () => downloadFile(url, `Kai${rng()}.${ext}`, name));
+    section.appendChild(el);
+  }
+
+  function addCaption() {
+    if (!d.text) return;
+    const full = `@${d.user_screen_name || 'unknown'}\n\n${d.text}\n\nSource: ${originalUrl}\nDownloaded via KaiTools`;
+    const blob = new Blob([full], { type: 'text/plain' });
+    const blobUrl = URL.createObjectURL(blob);
+    const el = document.createElement('div');
+    el.className = 'dl-option';
+    el.innerHTML = `
+      <div class="dl-opt-left">
+        <div class="dl-opt-icon">📝</div>
+        <div class="dl-opt-info">
+          <div class="dl-opt-name">Caption / Teks</div>
+          <div class="dl-opt-desc">simpan tweet sebagai .txt</div>
+        </div>
+      </div>
+      <div class="dl-opt-arrow">↓</div>
+    `;
+    el.addEventListener('click', () => downloadFile(blobUrl, `Kai${rng()}.txt`, 'Caption'));
+    section.appendChild(el);
+  }
+
+  function addCopyCaption() {
+    if (!d.text) return;
+    const el = document.createElement('div');
+    el.className = 'dl-option';
+    el.innerHTML = `
+      <div class="dl-opt-left">
+        <div class="dl-opt-icon">📋</div>
+        <div class="dl-opt-info">
+          <div class="dl-opt-name">Copy Caption</div>
+          <div class="dl-opt-desc">salin teks tweet ke clipboard</div>
+        </div>
+      </div>
+      <div class="dl-opt-arrow" style="font-size:13px;">⎘</div>
+    `;
+    el.addEventListener('click', () => {
+      navigator.clipboard.writeText(d.text).then(() => toast('Caption disalin ✓')).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = d.text; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        toast('Caption disalin ✓');
+      });
+    });
+    section.appendChild(el);
+  }
+
+  // ── Media section ──────────────────────────────────
+  if (hasMedia) {
+    addLabel(media.length > 1 ? `media (${media.length})` : 'media');
+
+    media.forEach((m, i) => {
+      const isVideo = m.type === 'video';
+      const isGif   = m.type === 'gif';
+      const label   = media.length > 1 ? ` ${i + 1}` : '';
+
+      if (isVideo) {
+        // multiple quality variants if available
+        addBtn('🎬', `Video${label}`, 'kualitas terbaik · mp4', m.url, 'mp4', true);
+      } else if (isGif) {
+        addBtn('🎞', `GIF${label}`, 'animated gif · mp4', m.url, 'mp4');
+      } else {
+        addBtn('🖼', `Foto${label}`, 'tanpa kompresi · jpg', m.url, 'jpg');
+      }
+    });
+
+    // Download all if multiple
+    if (media.length > 1) {
+      const allBtn = document.createElement('div');
+      allBtn.className = 'dl-option';
+      allBtn.style.cssText = 'background:var(--bg3);border-color:var(--line2);';
+      allBtn.innerHTML = `
+        <div class="dl-opt-left">
+          <div class="dl-opt-icon">📦</div>
+          <div class="dl-opt-info">
+            <div class="dl-opt-name">Unduh Semua Media</div>
+            <div class="dl-opt-desc">${media.length} file · otomatis satu per satu</div>
+          </div>
+        </div>
+        <div class="dl-opt-arrow">↓</div>
+      `;
+      allBtn.addEventListener('click', () => downloadAllMedia(media));
+      section.appendChild(allBtn);
+    }
+  } else {
+    addLabel('media');
+    const noMedia = document.createElement('div');
+    noMedia.style.cssText = `
+      font-family:'IBM Plex Mono',monospace; font-size:10px;
+      color:var(--text3); text-align:center; padding:16px 0; letter-spacing:0.06em;
+    `;
+    noMedia.textContent = 'Tweet ini tidak punya media (foto/video)';
+    section.appendChild(noMedia);
+  }
+
+  // ── Teks section ────────────────────────────────────
+  if (d.text) {
+    addLabel('teks');
+    addCaption();
+    addCopyCaption();
+  }
+
+  // ── Profil section ──────────────────────────────────
+  addLabel('profil');
+  addBtn('👤', 'Foto Profil', 'profile picture author · jpg',
+    (d.user_profile_image_url || '').replace('_normal', '_400x400'), 'jpg');
+
+  document.getElementById('result').classList.add('show');
+
+  // Save to history
+  const histItem = {
+    id: extractTweetId(originalUrl) || rng().toString(),
+    title: d.text || 'No caption',
+    author: '@' + (d.user_screen_name || 'unknown'),
+    thumb: (media[0]?.thumbnail_url || media[0]?.url || d.user_profile_image_url || ''),
+    url: originalUrl,
+    time: Date.now(),
+    hasMedia: hasMedia,
+    data: d
+  };
+  history = history.filter(h => h.id !== histItem.id);
+  history.unshift(histItem);
+  saveHistory();
+  updateHistCount();
+
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Download all media ─────────────────────────────────
+async function downloadAllMedia(media) {
+  toast(`Mendownload ${media.length} file...`);
+  for (let i = 0; i < media.length; i++) {
+    const m = media[i];
+    const ext = m.type === 'photo' ? 'jpg' : 'mp4';
+    await new Promise(r => setTimeout(r, 600 * i));
+    downloadFile(m.url, `Kai${rng()}.${ext}`, `Media ${i + 1}`);
+  }
+}
+
+// ── Download file ─────────────────────────────────────
+async function downloadFile(url, filename, label) {
+  toast(`Mendownload ${label}...`);
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    setTimeout(() => {
+      toast(`${label} — kalau tidak terdownload, coba tahan lama link lalu pilih "Simpan"`);
+    }, 1500);
+  } catch {
+    window.open(url, '_blank');
+  }
+}
+
+// ── History panel ─────────────────────────────────────
+function openHistory() {
+  renderHistory();
+  document.getElementById('histPanel').classList.add('show');
+  document.getElementById('histOverlay').classList.add('show');
+}
+function closeHistory() {
+  document.getElementById('histPanel').classList.remove('show');
+  document.getElementById('histOverlay').classList.remove('show');
+}
+function clearAllHistory() {
+  if (history.length === 0) return;
+  if (!confirm('Hapus semua riwayat?')) return;
+  history = [];
+  saveHistory();
+  renderHistory();
+  updateHistCount();
+  toast('Riwayat dihapus semua ✓');
+}
+function deleteHistItem(id, e) {
+  e.stopPropagation();
+  history = history.filter(h => h.id !== id);
+  saveHistory();
+  renderHistory();
+  updateHistCount();
+}
+function updateHistCount() {
+  const el = document.getElementById('histCount');
+  if (el) el.textContent = history.length;
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+
+  if (history.length === 0) {
+    list.innerHTML = '<div class="hist-empty">belum ada riwayat download</div>';
+    return;
+  }
+
+  history.slice(0, 20).forEach(h => {
+    const item = document.createElement('div');
+    item.className = 'hist-item';
+
+    const clickEl = document.createElement('div');
+    clickEl.className = 'hist-item-click';
+    clickEl.innerHTML = `
+      <img class="hist-thumb" src="${escHtml(h.thumb)}" alt="" onerror="this.style.display='none'"/>
+      <div class="hist-info">
+        <div class="hist-title">${escHtml(h.title)}</div>
+        <div class="hist-meta">${escHtml(h.author)} · ${fmtDate(h.time)}</div>
+      </div>
+    `;
+    clickEl.addEventListener('click', () => {
+      document.getElementById('urlInput').value = h.url;
+      if (h.data) renderResult(h.data, h.url);
+      closeHistory();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.style.cssText = `
+      background: none; border: 1px solid var(--line);
+      border-radius: 6px; width: 26px; height: 26px;
+      color: var(--text3); cursor: pointer; font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.12s;
+    `;
+    delBtn.textContent = '✕';
+    delBtn.title = 'Hapus';
+    delBtn.addEventListener('mouseenter', () => {
+      delBtn.style.color = '#FF6666'; delBtn.style.borderColor = 'rgba(255,102,102,0.3)';
+    });
+    delBtn.addEventListener('mouseleave', () => {
+      delBtn.style.color = 'var(--text3)'; delBtn.style.borderColor = 'var(--line)';
+    });
+    delBtn.addEventListener('click', (e) => deleteHistItem(h.id, e));
+
+    item.appendChild(clickEl);
+    item.appendChild(delBtn);
+    list.appendChild(item);
+  });
+}
+
+// ── Keyboard ──────────────────────────────────────────
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') fetchTweet();
+});
+
+// ── Helpers ───────────────────────────────────────────
+function setStatus(msg, type = '') {
+  const el = document.getElementById('status');
+  el.innerHTML = msg;
+  el.className = type;
+}
+
+function fmtNum(n) {
+  if (!n && n !== 0) return '—';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return (n / 1000).toFixed(1) + 'K';
+  return String(n);
+}
+
+function fmtDate(ts) {
+  const d = new Date(ts), diff = Date.now() - ts;
+  if (diff < 60000)   return 'baru saja';
+  if (diff < 3600000) return Math.floor(diff / 60000) + 'm lalu';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'j lalu';
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+  return String(s || '').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Init ──────────────────────────────────────────────
+renderHistory();
+updateHistCount();
+</script>
+</body>
+</html>
